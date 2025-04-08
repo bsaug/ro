@@ -4188,7 +4188,7 @@ function connectBot()
 	timeRandomChat = os.time() - 0
 	timeGetMalady = os.time() - 0
 	malady_timeS = 0 
-	accountType = "WINDOWS"
+	
 	if not accountType then
 		
 		if ((not bot_list_update[start_bot_list][1]:find("@")) and (not bot_list_update[start_bot_list][1]:find("+"))) and (bot_list_update[start_bot_list][3]:upper() == "-") and ((bot_list_update[start_bot_list][7]:upper() == "WINDOWS") or (bot_list_update[start_bot_list][7]:upper() == "ANDROID") or (bot_list_update[start_bot_list][7]:upper() == "MACOS") or (bot_list_update[start_bot_list][7]:upper() == "IOS")) then
