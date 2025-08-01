@@ -1,4 +1,4 @@
----- [ LUCIFER VARIABLE API ] ----
+---- [ LUCIFER VARIABLE API ] ---
 	bot = getBot()
 	proxy_manager = getProxyManager()
 ---- [ END LUCIFER VARIABLE API ] ----
