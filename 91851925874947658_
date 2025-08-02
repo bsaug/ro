@@ -1618,14 +1618,14 @@ end
 function randomPnbWorldTileScan(itemID)
 	local disconnect = false
 	local count = 0
-	while bot:isInWorld(randomPnbWorldString()) and world:getTile(math.floor(world:getLocal().posx / 32), math.floor(world:getLocal().posy / 32)).fg ~= 6 do
+	while bot:isInWorld(randomPnbWorldString()) and getLocal() and world:getTile(math.floor(world:getLocal().posx / 32), math.floor(world:getLocal().posy / 32)).fg ~= 6 do
 		bot:respawn()
 		sleep(1000)
 	end
 	
 	for _, tile in pairs(world:getTiles()) do
 		if bot.status == BotStatus.online then
-			if bot:isInWorld(randomPnbWorldString()) and (tile.fg == itemID or tile.bg == itemID) and ((tile.x == bot.x and tile.y == bot.y - 1) or (tile.x == bot.x + 1 and tile.y == bot.y - 1)) and world:getTile(math.floor(world:getLocal().posx / 32), math.floor(world:getLocal().posy / 32)).fg == 6 and world:hasAccess(tile.x, tile.y) ~= 0 then
+			if bot:isInWorld(randomPnbWorldString()) and (tile.fg == itemID or tile.bg == itemID) and ((tile.x == bot.x and tile.y == bot.y - 1) or (tile.x == bot.x + 1 and tile.y == bot.y - 1)) and getLocal() and world:getTile(math.floor(world:getLocal().posx / 32), math.floor(world:getLocal().posy / 32)).fg == 6 and world:hasAccess(tile.x, tile.y) ~= 0 then
 				count = count + 1
 				break
 			end
@@ -1764,7 +1764,7 @@ function consumeVial()
 				end
 			elseif inventory:getItemCount(vial_id) > 1 then
 				for _, tile in pairs(world:getTiles()) do
-					if bot.status == BotStatus.online and tile.y == bot.y and ((#bot:getPath(math.floor(world:getLocal().posx / 32), math.floor(world:getLocal().posy / 32)) > 0) or (#bot:getPath(math.floor(world:getLocal().posx / 32), math.floor(world:getLocal().posy / 32)) == 0 and bot:isInTile(math.floor(world:getLocal().posx / 32), math.floor(world:getLocal().posy / 32)))) then
+					if bot.status == BotStatus.online and tile.y == bot.y and getLocal() and ((#bot:getPath(math.floor(world:getLocal().posx / 32), math.floor(world:getLocal().posy / 32)) > 0) or (#bot:getPath(math.floor(world:getLocal().posx / 32), math.floor(world:getLocal().posy / 32)) == 0 and bot:isInTile(math.floor(world:getLocal().posx / 32), math.floor(world:getLocal().posy / 32)))) then
 						vial_move_x, vial_move_y = tile.x, tile.y
 						break
 					elseif bot.status ~= BotStatus.online or (bot.status == BotStatus.online and bot:getPing() == 0) then
@@ -1855,7 +1855,7 @@ function autoMalady()
 					while ((os.time() - startTime) < duration) and not disconnect do
 						if bot.status == BotStatus.online then
 							if toggleChickenFeet then
-								findpath(botX + math.random(5, 10), botY, 200)
+								findpath(botX + math.random(5, 8), botY, 200)
 							else
 								findpath(botX, botY, 200)
 							end
@@ -1868,7 +1868,7 @@ function autoMalady()
 					spam_detect = false
 				else
 					if toggleChickenFeet then
-						findpath(botX + math.random(5, 10), botY, 200)
+						findpath(botX + math.random(5, 8), botY, 200)
 					else
 						findpath(botX, botY, 200)
 					end
@@ -1941,19 +1941,12 @@ function autoMalady()
 				end
 			else
 				if spam_detect then
-					sleep(10000)
+					sleep(math.random(8000, 10000))
 					spam_detect = false
 				end
-				if lengthString > 5 then
-					chat_result = chat_list[2]
-					lengthString = #chat_list[1]
-					delaySpam = 3.48
-				else
-					chat_result = chat_list[1]
-					lengthString = #chat_list[2]
-					delaySpam = 3.48
-				end
-				bot:say(chat_result)
+				randomChat("ON", chat_list, 0)
+				sleep(1700)
+				delaySpam = 2.2
 			end
 			bot:say("/status")
 			addEvent(Event.variantlist, variantListEvent)
@@ -1988,8 +1981,8 @@ end
 function autoChickenFeet2Malady(flags, vec_x, vec_y, vec2_y)
     local pkt = GameUpdatePacket.new()
     pkt.flags = flags
-    pkt.vec_x = (world:getLocal().posx) + vec_x
-    pkt.vec_y = (world:getLocal().posy) + vec_y
+    pkt.vec_x = (getLocal() and world:getLocal().posx) + vec_x
+    pkt.vec_y = (getLocal() and world:getLocal().posy) + vec_y
 	pkt.vec2_x = 0
 	pkt.vec2_y = vec2_y
     bot:sendRaw(pkt)
@@ -2174,15 +2167,15 @@ end
 
 function randomChat(enable_status, table, delay)
 	if enable_status == "ON" then
-		if start_chat_list <= #table then
-			local text = table[start_chat_list]
-			local result = performActionRandomChat(text, delay)
-			if result then
-				bot:say(result)
+		local text = table[start_chat_list]
+		local result = performActionRandomChat(text, delay)
+		if result then
+			bot:say(result)
+			if start_chat_list < #table then
 				start_chat_list = start_chat_list + 1
+			else
+				start_chat_list = 1
 			end
-		else
-			start_chat_list = 1
 		end
 	else
 		return
@@ -2840,8 +2833,8 @@ function moveLeftAnimation(var1, var2, vec2_x, vec2_y)
 	if bot.status == BotStatus.online and showMoveAnimation() and getInfo(world:getTile(bot.x, bot.y + 1).fg).collision_type == 1 then
 		local pkt = GameUpdatePacket.new()
 		pkt.flags = 48
-		pkt.vec_x = (world:getLocal().posx)
-		pkt.vec_y = (world:getLocal().posy)
+		pkt.vec_x = (getLocal() and world:getLocal().posx)
+		pkt.vec_y = (getLocal() and world:getLocal().posy)
 		if not bot:isInTile(var1, var2) then
 			pkt.vec2_x = vec2_x
 			pkt.vec2_y = 0
@@ -2862,8 +2855,8 @@ function moveRightAnimation(var1, var2, vec2_x, vec2_y)
 	if bot.status == BotStatus.online and showMoveAnimation() and getInfo(world:getTile(bot.x, bot.y + 1).fg).collision_type == 1 then
 		local pkt = GameUpdatePacket.new()
 		pkt.flags = 32
-		pkt.vec_x = (world:getLocal().posx)
-		pkt.vec_y = (world:getLocal().posy)
+		pkt.vec_x = (getLocal() and world:getLocal().posx)
+		pkt.vec_y = (getLocal() and world:getLocal().posy)
 		if not bot:isInTile(var1, var2) then
 			pkt.vec2_x = vec2_x
 			pkt.vec2_y = 0
@@ -2904,8 +2897,8 @@ function moveUpAnimation(var1, var2, vec2_x, vec2_y)
 		else
 			pkt.flags = lastFlags
 		end
-		pkt.vec_x = (world:getLocal().posx)
-		pkt.vec_y = (world:getLocal().posy)
+		pkt.vec_x = (getLocal() and world:getLocal().posx)
+		pkt.vec_y = (getLocal() and world:getLocal().posy)
 		if not bot:isInTile(var1, var2) then
 			pkt.vec2_x = 0
 			pkt.vec2_y = vec2_y
@@ -2935,8 +2928,8 @@ function moveDownAnimation(var1, var2, vec2_x, vec2_y)
 			end
 			move_flags = 1
 		end
-		pkt.vec_x = (world:getLocal().posx)
-		pkt.vec_y = (world:getLocal().posy)
+		pkt.vec_x = (getLocal() and world:getLocal().posx)
+		pkt.vec_y = (getLocal() and world:getLocal().posy)
 		if not bot:isInTile(var1, var2) then
 			pkt.vec2_x = 0
 			pkt.vec2_y = vec2_y
@@ -3002,26 +2995,12 @@ function findpath(x, y, delay)
 							sleep(delay)
 						end
 					elseif bot.status ~= BotStatus.online or (bot.status == BotStatus.online and bot:getPing() == 0) then
-						reconnect(defaultWorldName, move_x, move_y)
-						move_x = bot.x
-						move_y = bot.y
-						if move_x and move_y then
-							bot:moveTile(path[i].x, path[i].y)
-							if move_y > path[i].y then
-								moveUpAnimation(x, y, 0, -400)
-							elseif move_y < path[i].y then
-								moveDownAnimation(x, y, 0, 400)
-							elseif move_x > path[i].x then
-								moveLeftAnimation(x, y, -400, 0)
-							elseif move_x < path[i].x then
-								moveRightAnimation(x, y, 400, 0)
-							end
-							sleep(delay)
-						end
+						reconnect(defaultWorldName, x, y)
+						return
 					end
 				end
 			else
-				reconnect(defaultWorldName, move_x, move_y)
+				reconnect(defaultWorldName, x, y)
 			end
 				
 			if bot.status == BotStatus.online and bot:isInWorld() then
@@ -3041,7 +3020,7 @@ function findpath(x, y, delay)
 					sleep(delay)
 				end
 			else
-				reconnect(defaultWorldName, move_x, move_y)
+				reconnect(defaultWorldName, x, y)
 			end
 		end
 	else
@@ -3056,12 +3035,12 @@ function whiteDoorCheck(worldName)
 	local worldName = worldName:upper()
 	local worldID = matchWorldIdStatus(worldName).world_id
 	if bot.status == BotStatus.online and bot:isInWorld() then
-		if world:getTile(math.floor(world:getLocal().posx / 32), math.floor(world:getLocal().posy / 32)).fg == 6 then
+		if getLocal() and world:getTile(math.floor(world:getLocal().posx / 32), math.floor(world:getLocal().posy / 32)).fg == 6 then
 			if worldID == "" then
 				return
 			else
 				local joinWorldCount = 0
-				while bot.status == BotStatus.online and string.find(world.name:upper(), worldName) and world:getTile(math.floor(world:getLocal().posx / 32), math.floor(world:getLocal().posy / 32)).fg == 6 and joinWorldCount < 5 do
+				while bot.status == BotStatus.online and string.find(world.name:upper(), worldName) and getLocal() and world:getTile(math.floor(world:getLocal().posx / 32), math.floor(world:getLocal().posy / 32)).fg == 6 and joinWorldCount < 5 do
 					joinWorldCount = joinWorldCount + 1
 					bot:warp(worldName .. "|" .. matchWorldIdStatus(worldName).world_id)
 					sleep(join_world_delayMS)
@@ -3183,10 +3162,10 @@ function reconnect(worldName, x, y)
 				if string.find(world.name:upper(), worldName) then
 					whiteDoorCheck(worldName)
 					if #bot:getPath(x, y) > 0 then
-						while string.find(world.name:upper(), worldName) and (math.floor(world:getLocal().posx / 32) ~= x or math.floor(world:getLocal().posy / 32) ~= y) do
+						while string.find(world.name:upper(), worldName) and getLocal() and (math.floor(world:getLocal().posx / 32) ~= x or math.floor(world:getLocal().posy / 32) ~= y) do
 							findpath(x, y)
 						end
-						if string.find(world.name:upper(), worldName) and math.floor(world:getLocal().posx / 32) == x and math.floor(world:getLocal().posy / 32) == y then
+						if string.find(world.name:upper(), worldName) and getLocal() and math.floor(world:getLocal().posx / 32) == x and math.floor(world:getLocal().posy / 32) == y then
 							whReconnect(
 								"<:Megaphone:1254703457236025385> **|** Bot Information: " .. bot.name:upper() .. " is back online!"
 							)
@@ -3803,6 +3782,7 @@ function breaker(x, y, seedID, blockID)
 		sleep(math.random(hit_delayMS, hit_delayMS + 10))
 		pnbHelper(seedID, blockID)
 		otherTools()
+		
 		if not bot:isInTile(pnb_x, pnb_y) then
 			sleep(25000)
 			findpath(pnb_x, pnb_y)
@@ -3811,7 +3791,6 @@ function breaker(x, y, seedID, blockID)
 	
 	if bot.status ~= BotStatus.online or (bot.status == BotStatus.online and bot:getPing() == 0) then
 		reconnect(defaultWorldName, move_x, move_y)
-		pnbController(seedID, blockID)
 	end
 end
 
@@ -3909,7 +3888,7 @@ function pnbController(seedID, blockID)
 	if ((bot:getAge() >= age()) or (bot.level >= getInfoItem(blockID).level)) then
 		if pnb_world_option == "RANDOMWORLD" then
 			joinWorld(randomPnbWorldString(), true)
-			if world:getTile(math.floor(world:getLocal().posx / 32), math.floor(world:getLocal().posy / 32) - 1).fg == 204 then
+			if getLocal() and world:getTile(math.floor(world:getLocal().posx / 32), math.floor(world:getLocal().posy / 32) - 1).fg == 204 then
 				pnb_x, pnb_y = bot.x, bot.y - 2
 			else
 				pnb_x, pnb_y = 1, 23
@@ -4218,7 +4197,7 @@ function takePickaxe()
 				end
 			elseif inventory:getItemCount(pickaxe_id) > 1 then
 				for _, tile in pairs(world:getTiles()) do
-					if bot.status == BotStatus.online and tile.y == bot.y and ((#bot:getPath(math.floor(world:getLocal().posx / 32), math.floor(world:getLocal().posy / 32)) > 0) or (#bot:getPath(math.floor(world:getLocal().posx / 32), math.floor(world:getLocal().posy / 32)) == 0 and bot:isInTile(math.floor(world:getLocal().posx / 32), math.floor(world:getLocal().posy / 32)))) then
+					if bot.status == BotStatus.online and tile.y == bot.y and getLocal() and ((#bot:getPath(math.floor(world:getLocal().posx / 32), math.floor(world:getLocal().posy / 32)) > 0) or (#bot:getPath(math.floor(world:getLocal().posx / 32), math.floor(world:getLocal().posy / 32)) == 0 and bot:isInTile(math.floor(world:getLocal().posx / 32), math.floor(world:getLocal().posy / 32)))) then
 						pickaxe_move_x, pickaxe_move_y = tile.x, tile.y
 						break
 					elseif bot.status ~= BotStatus.online or (bot.status == BotStatus.online and bot:getPing() == 0) then
@@ -4345,7 +4324,7 @@ function takeConsume()
 				end
 			elseif inventory:getItemCount(auto_consume_id) > 1 then
 				for _, tile in pairs(world:getTiles()) do
-					if bot.status == BotStatus.online and tile.y == bot.y and ((#bot:getPath(math.floor(world:getLocal().posx / 32), math.floor(world:getLocal().posy / 32)) > 0) or (#bot:getPath(math.floor(world:getLocal().posx / 32), math.floor(world:getLocal().posy / 32)) == 0 and bot:isInTile(math.floor(world:getLocal().posx / 32), math.floor(world:getLocal().posy / 32)))) then
+					if bot.status == BotStatus.online and tile.y == bot.y and getLocal() and ((#bot:getPath(math.floor(world:getLocal().posx / 32), math.floor(world:getLocal().posy / 32)) > 0) or (#bot:getPath(math.floor(world:getLocal().posx / 32), math.floor(world:getLocal().posy / 32)) == 0 and bot:isInTile(math.floor(world:getLocal().posx / 32), math.floor(world:getLocal().posy / 32)))) then
 						auto_consume_move_x, auto_consume_move_y = tile.x, tile.y
 						break
 					elseif bot.status ~= BotStatus.online or (bot.status == BotStatus.online and bot:getPing() == 0) then
@@ -4385,7 +4364,7 @@ function dropConsume()
 end
 
 function autoConsumeController()
-	if auto_consume_option == "ON" and getLocal().avatarFlags == 0 and bot:getAge() < age() and bot.level < getInfoItem(block_id).level then
+	if auto_consume_option == "ON" and getLocal() and getLocal().avatarFlags == 0 and bot:getAge() < age() and bot.level < getInfoItem(block_id).level then
 		if ((inventory:getItemCount(auto_consume_id) == 0) or (inventory:getItemCount(auto_consume_id) > 1)) then
 			joinWorld(auto_consume_world)
 			takeConsume()
@@ -4395,7 +4374,7 @@ function autoConsumeController()
 				"<:Megaphone:1254703457236025385> **|** Bot Information: " .. bot.name:upper() .. " already has the " .. getInfoItem(auto_consume_id).name
 			)
 			joinWorld(rotation_world)
-			while inventory:getItemCount(auto_consume_id) == 1 and getLocal().avatarFlags == 0 do
+			while inventory:getItemCount(auto_consume_id) == 1 and getLocal() and getLocal().avatarFlags == 0 do
 				bot:place(bot.x, bot.y, auto_consume_id)
 				sleep(math.random(place_delayMS, place_delayMS + 100))
 			end
@@ -4442,7 +4421,7 @@ function joinWorld(worldName, custom_join_world)
 				
 				if string.find(world.name:upper(), defaultWorldName) then
 					if custom_join_world then
-						while bot:isInWorld(randomPnbWorldString()) and world:getTile(math.floor(world:getLocal().posx / 32), math.floor(world:getLocal().posy / 32)).fg ~= 6 do
+						while bot:isInWorld(randomPnbWorldString()) and getLocal() and world:getTile(math.floor(world:getLocal().posx / 32), math.floor(world:getLocal().posy / 32)).fg ~= 6 do
 							bot:respawn()
 							sleep(1000)
 						end
@@ -4452,7 +4431,7 @@ function joinWorld(worldName, custom_join_world)
 							joinWorld(randomPnbWorldString(), true)
 						end
 						
-						if bot:isInWorld(randomPnbWorldString()) and world:getTile(math.floor(world:getLocal().posx / 32), math.floor(world:getLocal().posy / 32)).fg == 6 then
+						if bot:isInWorld(randomPnbWorldString()) and getLocal() and world:getTile(math.floor(world:getLocal().posx / 32), math.floor(world:getLocal().posy / 32)).fg == 6 then
 							if randomPnbWorldTileScan(204) == 0 then
 								local bigLockID = { 204 }
 								while upgradeInventory(bigLockID) == "AVAILABLE" and inventory:getItemCount(204) == 0 and bot.gem_count >= 200 do
@@ -4462,8 +4441,9 @@ function joinWorld(worldName, custom_join_world)
 							end
 							
 							if bot:isInWorld(randomPnbWorldString()) and world:hasAccess(bot.x, bot.y - 1) ~= 0 and inventory:getItemCount(204) >= 1 then
-								while ((world:getTile(math.floor(world:getLocal().posx / 32), math.floor(world:getLocal().posy / 32) - 1).fg == 0) or (world:getTile(math.floor(world:getLocal().posx / 32), math.floor(world:getLocal().posy / 32) - 1).bg == 0)) and world:hasAccess(bot.x, bot.y - 1) ~= 0 and inventory:getItemCount(204) >= 1 do
-									bot:place(math.floor(world:getLocal().posx / 32), math.floor(world:getLocal().posy / 32) - 1, 204)
+								while getLocal() and ((world:getTile(math.floor(world:getLocal().posx / 32), math.floor(world:getLocal().posy / 32) - 1).fg == 0) or (world:getTile(math.floor(world:getLocal().posx / 32), math.floor(world:getLocal().posy / 32) - 1).bg == 0)) and world:hasAccess(bot.x, bot.y - 1) ~= 0 and inventory:getItemCount(204) >= 1 do
+									local x, y = getLocal() and math.floor(world:getLocal().posx / 32), getLocal() and math.floor(world:getLocal().posy / 32) - 1
+									bot:place(x, y, 204)
 									sleep(math.random(place_delayMS, place_delayMS + 100))
 								end
 							end
@@ -4477,14 +4457,16 @@ function joinWorld(worldName, custom_join_world)
 							end
 							
 							if bot:isInWorld(randomPnbWorldString()) and world:hasAccess(bot.x + 1, bot.y - 1) ~= 0 and inventory:getItemCount(226) >= 1 then
-								while ((world:getTile(math.floor(world:getLocal().posx / 32) + 1, math.floor(world:getLocal().posy / 32) - 1).fg == 0) or (world:getTile(math.floor(world:getLocal().posx / 32) + 1, math.floor(world:getLocal().posy / 32) - 1).bg == 0)) and world:hasAccess(bot.x + 1, bot.y - 1) ~= 0 and inventory:getItemCount(226) >= 1 do
-									bot:place(math.floor(world:getLocal().posx / 32) + 1, math.floor(world:getLocal().posy / 32) - 1, 226)
+								while getLocal() and ((world:getTile(math.floor(world:getLocal().posx / 32) + 1, math.floor(world:getLocal().posy / 32) - 1).fg == 0) or (world:getTile(math.floor(world:getLocal().posx / 32) + 1, math.floor(world:getLocal().posy / 32) - 1).bg == 0)) and world:hasAccess(bot.x + 1, bot.y - 1) ~= 0 and inventory:getItemCount(226) >= 1 do
+									local x, y = getLocal() and math.floor(world:getLocal().posx / 32) + 1, getLocal() and math.floor(world:getLocal().posy / 32) - 1
+									bot:place(x, y, 226)
 									sleep(math.random(place_delayMS, place_delayMS + 100))
 								end
 							end
 							
-							if bot:isInWorld(randomPnbWorldString()) and not world:getTile(math.floor(world:getLocal().posx / 32) + 1, math.floor(world:getLocal().posy / 32) - 1):hasFlag(64) then
-								bot:hit(math.floor(world:getLocal().posx / 32) + 1, math.floor(world:getLocal().posy / 32) - 1)
+							if bot:isInWorld(randomPnbWorldString()) and getLocal() and not world:getTile(math.floor(world:getLocal().posx / 32) + 1, math.floor(world:getLocal().posy / 32) - 1):hasFlag(64) then
+								local x, y = getLocal() and math.floor(world:getLocal().posx / 32) + 1, getLocal() and math.floor(world:getLocal().posy / 32) - 1
+								bot:hit(x, y)
 								sleep(math.random(hit_delayMS, hit_delayMS + 100))
 							end
 					
